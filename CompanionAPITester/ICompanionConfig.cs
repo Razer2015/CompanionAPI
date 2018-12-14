@@ -5,6 +5,6 @@
         string Email { get; }
         string Password { get; }
         string Game { get; }
-        string PersonaId { get; }
+        string PersonaName { get; }
     }
 }

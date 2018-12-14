@@ -72,6 +72,10 @@
       <Project>{ea41bfb7-7445-4c76-8e2c-5ae3fab85e56}</Project>
       <Name>CompanionAPI</Name>
     </ProjectReference>
+    <ProjectReference Include="..\OriginAPI\OriginAPI.csproj">
+      <Project>{33c7cba7-4b4f-47fb-95fd-a60bdf46b7e3}</Project>
+      <Name>OriginAPI</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("CompanionAPITester")]
+[assembly: AssemblyTitle("OriginAPI")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("eventHorizon")]
-[assembly: AssemblyProduct("CompanionAPITester")]
+[assembly: AssemblyProduct("OriginAPI")]
 [assembly: AssemblyCopyright("Copyright © Razerman 2018")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("7a426d9f-e5b6-484a-a3cf-6f3babd071f3")]
+[assembly: Guid("33c7cba7-4b4f-47fb-95fd-a60bdf46b7e3")]
 
 // Version information for an assembly consists of the following four values:
 //

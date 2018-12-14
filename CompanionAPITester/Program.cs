@@ -8,21 +8,28 @@ namespace CompanionAPITester
     {
         static void Main(string[] args) {
             var settings = new ConfigurationBuilder<ICompanionConfig>()
+#if DEBUG
+                .UseJsonFile("config.dev.json")
+#else
                 .UseJsonFile("config.json")
+#endif
                 .Build();
             
             try {
                 // Get authentication token
-                var auth = new Authentication.Auth();
-                auth.Login(settings.Email, settings.Password, Authentication.AccessType.Companion);
+                var auth = new Origin.Authentication.Auth();
+                auth.Login(settings.Email, settings.Password);
 
-                // Login and retrieve session token
-                var companion = new CompanionClient();
-                companion.Login(auth.Code);
+                // Search persona
+                if (auth.SearchPersonaId(settings.PersonaName, out var user, out var status)) {
+                    // Login and retrieve session token
+                    var companion = new CompanionClient();
+                    companion.Login(auth.CompanionToken);
 
-                // Get detailed stats
-                var stats = companion.GetDetailedStats(settings.Game, settings.PersonaId);
-                Console.WriteLine($@"StatsType: {stats.DetailedStatType}
+                    // Get detailed stats
+                    var stats = companion.GetDetailedStats(settings.Game, user.PersonaId);
+                    Console.WriteLine($@"Player: {user.EAID} ({user.PersonaId})
+StatsType: {stats.DetailedStatType}
 TimePlayed: {stats.BasicStats.TimePlayed}
 Wins: {stats.BasicStats.Wins}
 Losses: {stats.BasicStats.Losses}
@@ -31,6 +38,10 @@ Deaths: {stats.BasicStats.Deaths}
 Kpm: {stats.BasicStats.KPM}
 Spm: {stats.BasicStats.SPM}
 Skill: {stats.BasicStats.Skill}");
+                }
+                else {
+                    Console.WriteLine($"Error: PersonaId search failed for {settings.PersonaName} because {status}.");
+                }
             }
             catch (Exception e) {
                 Console.WriteLine($"Error: {e.Message}");
