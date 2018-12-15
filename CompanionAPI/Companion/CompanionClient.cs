@@ -13,12 +13,18 @@ namespace CompanionAPI
         private string _session;
         private string _clientVersion = "companion-init";
 
-        public void Login(string code) {
+        public bool Login(string code, out ResponseStatus status) {
             var method = "Companion.loginFromAuthCode";
-            var result = PostRequest<LoginResponseModel>(method, GenerateRequestData(method, new LoginRequestModel(code)));
-
-            _session = result.Id;
-            _clientVersion = "companion-9014390";
+            if (PostRequest<LoginResponseModel>(method, GenerateRequestData(method, new LoginRequestModel(code)), out var result)) {
+                status = result.ResponseStatus;
+                _session = result.Result.Id;
+                _clientVersion = "companion-9014390";
+                return true;
+            }
+            else {
+                status = result.ResponseStatus;
+                return false;
+            }
         }
 
         /// <summary>
@@ -26,18 +32,25 @@ namespace CompanionAPI
         /// </summary>
         /// <param name="game">BF4 = bf4, BF1 = tunguska, BFV = casablanca</param>
         /// <param name="personaId"></param>
-        public DetailedStatsResponseModel GetDetailedStats(string game, string personaId) {
+        public bool GetDetailedStats(string game, string personaId, out DetailedStatsResponseModel response, out ResponseStatus status) {
             var method = "Stats.detailedStatsByPersonaId";
-            var result = PostRequest<DetailedStatsResponseModel>(method, GenerateRequestData(method, new DetailedStatsRequestModel(game, personaId)));
-
-            return result;
+            if (PostRequest<DetailedStatsResponseModel>(method, GenerateRequestData(method, new DetailedStatsRequestModel(game, personaId)), out var result)) {
+                status = result.ResponseStatus;
+                response = result.Result;
+                return true;
+            }
+            else {
+                status = result.ResponseStatus;
+                response = null;
+                return false;
+            }
         }
 
         private string GenerateRequestData<T>(string method, T data) {
             return JsonConvert.SerializeObject(new Request<T>(method, data));
         }
 
-        private T PostRequest<T>(string method, string data) {
+        private bool PostRequest<T>(string method, string data, out Response<T> result) {
             var httpWebRequest = (HttpWebRequest)WebRequest.Create($"{Constants.CompanionAPI}{method}");
             httpWebRequest.ContentType = "application/json";
             httpWebRequest.Method = "POST";
@@ -57,10 +70,22 @@ namespace CompanionAPI
                 streamWriter.Close();
             }
 
-            var httpResponse = (HttpWebResponse)httpWebRequest.GetResponse();
-            using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                var result = streamReader.ReadToEnd();
-                return JsonConvert.DeserializeObject<Response<T>>(result).Result;
+            try {
+                var httpResponse = (HttpWebResponse)httpWebRequest.GetResponse();
+                using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                    var stream = streamReader.ReadToEnd();
+                    result = JsonConvert.DeserializeObject<Response<T>>(stream);
+                    return true;
+                }
+            }
+            catch (WebException ex) {
+                var response = (HttpWebResponse)ex.Response;
+                using (var streamReader = new StreamReader(response.GetResponseStream())) {
+                    var stream = streamReader.ReadToEnd();
+                    result = JsonConvert.DeserializeObject<Response<T>>(stream);
+                }
+
+                return false;
             }
         }
     }

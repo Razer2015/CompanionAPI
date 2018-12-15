@@ -55,6 +55,7 @@
     <Compile Include="Companion\Models\Request.cs" />
     <Compile Include="Companion\Models\StatsModel.cs" />
     <Compile Include="Constants.cs" />
+    <Compile Include="Enums.cs" />
     <Compile Include="Helpers\HelperMethods.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
