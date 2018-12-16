@@ -1,0 +1,13 @@
+﻿{
+  "prefix": "?",
+  "[BB_PREFIX]": "https://eaassets-a.akamaihd.net/battlelog/battlebinary",
+  /* Discord Bot Token */
+  "tokens": {
+    "discord": ""
+  },
+  /* Origin Credentials */
+  "credentials": {
+    "email": "",
+    "password": ""
+  }
+}

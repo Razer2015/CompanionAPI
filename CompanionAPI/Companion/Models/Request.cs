@@ -27,4 +27,18 @@ namespace CompanionAPI.Models
             Params = parameters;
         }
     }
+
+    public class RequestParams
+    {
+        [JsonProperty("game")]
+        public string Game { get; set; }
+        [JsonProperty("personaId")]
+        public string PersonaId { get; set; }
+        [JsonProperty("platform")]
+        public string Platform { get; set; }
+        [JsonProperty("code")]
+        public string Code { get; set; }
+        [JsonProperty("redirectUri")]
+        public string RedirectUri { get; set; }
+    }
 }

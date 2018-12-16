@@ -34,7 +34,14 @@ namespace WebClient
         }
 
         protected override WebResponse GetWebResponse(WebRequest request) {
-            var response = (HttpWebResponse)base.GetWebResponse(request);
+            HttpWebResponse response = null;
+            try {
+                response = (HttpWebResponse)base.GetWebResponse(request);
+            }
+            catch (WebException e) {
+                if (e.Message.Contains("302"))
+                    response = (HttpWebResponse)e.Response;
+            }
             this.ResponseCookies = response.Cookies;
             return response;
         }

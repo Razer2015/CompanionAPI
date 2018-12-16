@@ -4,7 +4,7 @@ using System.Xml.Serialization;
 namespace OriginAPI.Models
 {
     [XmlRoot(ElementName = "user")]
-    public class User
+    public class AtomUser
     {
         [XmlElement(ElementName = "userId")]
         public string UserId { get; set; }
@@ -12,12 +12,13 @@ namespace OriginAPI.Models
         public string PersonaId { get; set; }
         [XmlElement(ElementName = "EAID")]
         public string EAID { get; set; }
+        public string Avatar { get; set; }
     }
 
     [XmlRoot(ElementName = "users")]
     public class AtomUsers
     {
         [XmlElement(ElementName = "user")]
-        public List<User> Users { get; set; }
+        public List<AtomUser> Users { get; set; }
     }
 }

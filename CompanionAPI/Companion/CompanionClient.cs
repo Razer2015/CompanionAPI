@@ -15,7 +15,7 @@ namespace CompanionAPI
 
         public bool Login(string code, out ResponseStatus status) {
             var method = "Companion.loginFromAuthCode";
-            if (PostRequest<LoginResponseModel>(method, GenerateRequestData(method, new LoginRequestModel(code)), out var result)) {
+            if (PostRequest<LoginViewModel>(method, new RequestParams { Code = code, RedirectUri = "nucleus:rest" }, out var result)) {
                 status = result.ResponseStatus;
                 _session = result.Result.Id;
                 _clientVersion = "companion-9014390";
@@ -28,13 +28,94 @@ namespace CompanionAPI
         }
 
         /// <summary>
+        /// Get persona info as career
+        /// </summary>
+        /// <param name="token"></param>
+        /// <param name="personaId"></param>
+        /// <returns></returns>
+        public StatsViewModel GetPersonaInfo(string token, string personaId) {
+            var info = new CareerViewModel();
+            // Get career
+            for (int i = 0; i < 2; i++) {
+                if (GetCareer(personaId, out var career, out var responseStatus)) {
+                    info = career;
+                    break;
+                }
+                else {
+                    if (responseStatus.Status == Status.InvalidSession) {
+                        // Login and retrieve session token
+                        if (!Login(token, out responseStatus)) {
+                            throw new Exception("Error: Invalid session and couldn't refresh.");
+                        }
+                    }
+                    else {
+                        throw new Exception("Error: Unknown error.");
+                    }
+                }
+            }
+
+            return info;
+        }
+
+        /// <summary>
+        /// Get all persona info
+        /// </summary>
+        /// <param name="token"></param>
+        /// <param name="personaId"></param>
+        /// <param name="game"></param>
+        /// <param name="platform"></param>
+        /// <returns></returns>
+        public StatsViewModel GetPersonaInfo(string token, string personaId, string game, string platform) {
+            var info = new DetailedStatsViewModel();
+            // Get detailed stats
+            for (int i = 0; i < 2; i++) {
+                if (GetDetailedStats(game, personaId, out var stats, out var responseStatus)) {
+                    info = stats;
+                    break;
+                }
+                else {
+                    if (responseStatus.Status == Status.InvalidSession) {
+                        // Login and retrieve session token
+                        if (!Login(token, out responseStatus)) {
+                            throw new Exception("Error: Invalid session and couldn't refresh.");
+                        }
+                    }
+                    else {
+                        throw new Exception("Error: Unknown error.");
+                    }
+                }
+            }
+
+            // Get emblem
+            for (int i = 0; i < 2; i++) {
+                if (GetEquippedEmblem(personaId, platform, out var emblemUrl, out var responseStatus)) {
+                    info.EmblemUrl = emblemUrl;
+                    break;
+                }
+                else {
+                    if (responseStatus.Status == Status.InvalidSession) {
+                        // Login and retrieve session token
+                        if (!Login(token, out responseStatus)) {
+                            throw new Exception("Error: Invalid session and couldn't refresh.");
+                        }
+                    }
+                    else {
+                        throw new Exception("Error: Unknown error.");
+                    }
+                }
+            }
+
+            return info;
+        }
+
+        /// <summary>
         /// Get detailed stats of a game for person
         /// </summary>
         /// <param name="game">BF4 = bf4, BF1 = tunguska, BFV = casablanca</param>
         /// <param name="personaId"></param>
-        public bool GetDetailedStats(string game, string personaId, out DetailedStatsResponseModel response, out ResponseStatus status) {
+        public bool GetDetailedStats(string game, string personaId, out DetailedStatsViewModel response, out ResponseStatus status) {
             var method = "Stats.detailedStatsByPersonaId";
-            if (PostRequest<DetailedStatsResponseModel>(method, GenerateRequestData(method, new DetailedStatsRequestModel(game, personaId)), out var result)) {
+            if (PostRequest<DetailedStatsViewModel>(method, new RequestParams { Game = game, PersonaId = personaId }, out var result)) {
                 status = result.ResponseStatus;
                 response = result.Result;
                 return true;
@@ -46,11 +127,52 @@ namespace CompanionAPI
             }
         }
 
-        private string GenerateRequestData<T>(string method, T data) {
-            return JsonConvert.SerializeObject(new Request<T>(method, data));
+        /// <summary>
+        /// Get the equipped emblem url of the persona
+        /// </summary>
+        /// <param name="personaId"></param>
+        /// <param name="platform"></param>
+        /// <param name="emblemUrl"></param>
+        /// <param name="status"></param>
+        /// <returns></returns>
+        public bool GetEquippedEmblem(string personaId, string platform, out string emblemUrl, out ResponseStatus status) {
+            var method = "Emblems.getEquippedEmblem";
+            platform = (string.IsNullOrEmpty(platform) ? "pc" : platform);
+            if (PostRequest<string>(method, new RequestParams { PersonaId = personaId, Platform = platform }, out var result)) {
+                status = result.ResponseStatus;
+                emblemUrl = result.Result;
+                return true;
+            }
+            else {
+                status = result.ResponseStatus;
+                emblemUrl = null;
+                return false;
+            }
         }
 
-        private bool PostRequest<T>(string method, string data, out Response<T> result) {
+        public bool GetCareer(string personaId, out CareerViewModel career, out ResponseStatus status) {
+            var method = "Stats.getCareerForOwnedGamesByPersonaId";
+            if (PostRequest<CareerViewModel>(method, new RequestParams { PersonaId = personaId }, out var result)) {
+                status = result.ResponseStatus;
+                career = result.Result;
+                return true;
+            }
+            else {
+                status = result.ResponseStatus;
+                career = null;
+                return false;
+            }
+        }
+
+        private string GenerateRequestData(string method, RequestParams data) {
+            return JsonConvert.SerializeObject(new Request<RequestParams>(method, data), 
+                Formatting.None,
+                new JsonSerializerSettings {
+                    NullValueHandling = NullValueHandling.Ignore
+                });
+        }
+
+        private bool PostRequest<T>(string method, RequestParams @params, out Response<T> result) {
             var httpWebRequest = (HttpWebRequest)WebRequest.Create($"{Constants.CompanionAPI}{method}");
             httpWebRequest.ContentType = "application/json";
             httpWebRequest.Method = "POST";
@@ -65,7 +187,7 @@ namespace CompanionAPI
             }
 
             using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream())) {
-                streamWriter.Write(data);
+                streamWriter.Write(GenerateRequestData(method, @params));
                 streamWriter.Flush();
                 streamWriter.Close();
             }

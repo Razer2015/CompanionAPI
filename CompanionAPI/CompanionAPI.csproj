@@ -50,10 +50,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Companion\CompanionClient.cs" />
-    <Compile Include="Companion\Models\LoginModel.cs" />
+    <Compile Include="Companion\Models\CareerViewModel.cs" />
+    <Compile Include="Companion\Models\LoginViewModel.cs" />
+    <Compile Include="Companion\Models\StatsViewModel.cs" />
     <Compile Include="Companion\Models\Response.cs" />
     <Compile Include="Companion\Models\Request.cs" />
-    <Compile Include="Companion\Models\StatsModel.cs" />
+    <Compile Include="Companion\Models\DetailedStatsViewModel.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Enums.cs" />
     <Compile Include="Helpers\HelperMethods.cs" />

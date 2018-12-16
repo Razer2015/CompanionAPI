@@ -2,6 +2,7 @@
 using OriginAPI;
 using OriginAPI.Models;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -143,7 +144,7 @@ namespace Origin.Authentication
         /// <param name="user">Result user (if any)</param>
         /// <param name="status">Status of the search</param>
         /// <returns>Success/Fail</returns>
-        public bool SearchPersonaId(string searchTerm, out User user, out UserSearchStatus status) {
+        public bool SearchPersonaId(string searchTerm, out AtomUser user, out UserSearchStatus status) {
             userClient.AuthToken = OriginToken;
             var result = userClient.DownloadString($"{API}/xsearch/users?userId={_myself.pid.pidId}&searchTerm={searchTerm}");
             var personas = JsonConvert.DeserializeObject<Personas>(result);
@@ -158,17 +159,58 @@ namespace Origin.Authentication
                 return false;
             }
 
-            result = userClient.DownloadString($"{API}/atom/users?userIds={string.Join(",", personas.infoList.Select(x => x.friendUserId))}");
-            var atomUsers = new XMLSerializer().Deserialize<AtomUsers>(result);
+            //result = userClient.DownloadString($"{API}/atom/users?userIds={string.Join(",", personas.infoList.Select(x => x.friendUserId))}");
+            //var atomUsers = new XMLSerializer().Deserialize<AtomUsers>(result);
+            // Apparently 5 at a time is a max
+            var atomUsers = GetAtomUsers(personas.infoList);
 
             user = atomUsers.Users.FirstOrDefault(x => x.EAID.Equals(searchTerm, StringComparison.OrdinalIgnoreCase));
             if (user != null) {
                 status = UserSearchStatus.SUCCESS;
+                user.Avatar = GetAvatar(user.UserId);
                 return true;
             }
             else {
                 status = UserSearchStatus.PARTIAL_MATCHES;
                 return false;
+            }
+        }
+
+        public bool SearchPersonaId(string userId, out AtomUser user) {
+            userClient.AuthToken = OriginToken;
+
+            var atomUsers = GetAtomUsers(new List<InfoList> { new InfoList { friendUserId = userId } });
+
+            user = atomUsers.Users.FirstOrDefault();
+            if (atomUsers.Users.Count == 1) {
+                user.Avatar = GetAvatar(user.UserId);
+                return true;
+            }
+
+            return false;
+        }
+
+        private AtomUsers GetAtomUsers(List<InfoList> list) {
+            var groups = ListExtensions.ChunkBy(list, 5);
+
+            var atomUsers = new AtomUsers { Users = new List<AtomUser>() };
+            foreach (var group in groups) {
+                var result = userClient.DownloadString($"{API}/atom/users?userIds={string.Join(",", group.Select(x => x.friendUserId))}");
+                var tempUsers = new XMLSerializer().Deserialize<AtomUsers>(result);
+                atomUsers.Users = atomUsers.Users.Concat(tempUsers.Users).ToList();
+            }
+
+            return atomUsers;
+        }
+
+        public string GetAvatar(string userId) {
+            try {
+                var result = userClient.DownloadString($"{API}/avatar/user/{userId}/avatars?size=1");
+                var user = new XMLSerializer().Deserialize<Users>(result);
+                return user.User.Avatar.Link;
+            }
+            catch (Exception e) {
+                return "https://d1oj1wlo31gm2u.cloudfront.net/avatars/NAV/208x208.jpg";
             }
         }
     }
