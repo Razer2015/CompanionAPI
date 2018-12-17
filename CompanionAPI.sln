@@ -11,7 +11,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OriginAPI", "OriginAPI\Orig
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Discord", "Discord\Discord.csproj", "{7AD85C71-8E0F-40A4-84A2-9958645A7310}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscordTester", "DiscordTester\DiscordTester.csproj", "{8FEC5DA0-825B-47E4-A2AB-FA0F97110CD6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DiscordTester", "DiscordTester\DiscordTester.csproj", "{8FEC5DA0-825B-47E4-A2AB-FA0F97110CD6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

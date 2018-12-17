@@ -9,6 +9,7 @@ using CompanionAPI.Models;
 using OriginAPI.Models;
 using Discord.Models;
 using System.Text;
+using System.Linq;
 
 namespace Discord.Modules
 {
@@ -42,11 +43,11 @@ namespace Discord.Modules
                 try {
                     var result = _personaService.AddPersona(socketUser.Id, user.UserId, user.PersonaId);
                     switch (result) {
-                        case Models.AddStatus.Fail:
+                        case AddStatus.Fail:
                             await ReplyAsync("**Error**: Something went wrong while adding a new persona.");
                             break;
-                        case Models.AddStatus.Overwritten:
-                        case Models.AddStatus.Success:
+                        case AddStatus.Overwritten:
+                        case AddStatus.Success:
                             await ReplyAsync($"**Success**: Persona {user.EAID} added succesfully.");
                             break;
                     }
@@ -69,11 +70,11 @@ namespace Discord.Modules
                 try {
                     var result = _personaService.AddPersona(Context.User.Id, user.UserId, user.PersonaId);
                     switch (result) {
-                        case Models.AddStatus.Fail:
+                        case AddStatus.Fail:
                             await ReplyAsync("**Error**: Something went wrong while adding a new persona.");
                             break;
-                        case Models.AddStatus.Overwritten:
-                        case Models.AddStatus.Success:
+                        case AddStatus.Overwritten:
+                        case AddStatus.Success:
                             await ReplyAsync($"**Success**: Persona {user.EAID} added succesfully.");
                             break;
                     }
@@ -91,42 +92,31 @@ namespace Discord.Modules
         [Alias("bf4")]
         [Summary("Retrieve stats for BF4 player.")]
         public async Task BF4Stats(string userName) {
-            await StatsByName(userName, Games.BF4);
-        }
-
-        [Command("bf4stats")]
-        [Alias("bf4")]
-        [Summary("Retrieve stats for BF4 player.")]
-        public async Task BF4Stats([Remainder]SocketGuildUser socketUser) {
-            await StatsByGuildUser(socketUser, Games.BF4);
+            await ProcessCommand(userName, Games.BF4);
         }
 
         [Command("bf1stats")]
         [Alias("bf1")]
         [Summary("Retrieve stats for BF1 player.")]
         public async Task BF1Stats(string userName) {
-            await StatsByName(userName, Games.BF1);
-        }
-
-        [Command("bf1stats")]
-        [Alias("bf1")]
-        [Summary("Retrieve stats for BF1 player.")]
-        public async Task BF1Stats([Remainder]SocketGuildUser socketUser) {
-            await StatsByGuildUser(socketUser, Games.BF1);
+            await ProcessCommand(userName, Games.BF1);
         }
 
         [Command("bfvstats")]
         [Alias("bfv")]
         [Summary("Retrieve stats for BFV player.")]
         public async Task BFVStats(string userName) {
-            await StatsByName(userName, Games.BFV);
+            await ProcessCommand(userName, Games.BFV);
         }
 
-        [Command("bfvstats")]
-        [Alias("bfv")]
-        [Summary("Retrieve stats for BFV player.")]
-        public async Task BFVStats([Remainder]SocketGuildUser socketUser) {
-            await StatsByGuildUser(socketUser, Games.BFV);
+        private async Task ProcessCommand(string userName, Games game) {
+            var mention = Context.Message.MentionedUsers.FirstOrDefault();
+            if (mention != null) {
+                await StatsByGuildUser((SocketGuildUser)mention, game);
+            }
+            else {
+                await StatsByName(userName, game);
+            }
         }
 
         private async Task StatsByName(string userName, Games game) {
@@ -185,19 +175,20 @@ namespace Discord.Modules
             }
             else {
                 // TODO: Make command dynamic
-                await ReplyAsync($"**Error**: Selected user doesn't have a persona set. Try searching with the playername.");
+                await ReplyAsync($"**Error**: Selected user doesn't have a persona set. Trying to search with the playername.");
+                await StatsByName(socketUser.Username, game);
             }
         }
 
         private string GetPlayTime(TimeSpan time) {
             var sb = new StringBuilder();
-            sb.Append("With ");
+            sb.Append(":clock4: ");
             sb.Append(time.Days);
             sb.Append("d ");
             sb.Append(time.Hours);
             sb.Append("h ");
             sb.Append(time.Minutes);
-            sb.Append("m of Play Time");
+            sb.Append("m of Playtime");
 
             return sb.ToString();
         }
@@ -245,7 +236,10 @@ namespace Discord.Modules
             }
             var embed = BuildEmbed(user, career.GameStats.BF4);
 
-            embed.WithThumbnailUrl(career.Emblem.Replace("[SIZE]", "256").Replace("[FORMAT]", "png"));
+            //if (career.Emblem != null) {
+            //    embed.WithThumbnailUrl(career.Emblem.Replace("[SIZE]", "256").Replace("[FORMAT]", "png"));
+            //}
+            embed.WithThumbnailUrl(user.Avatar);
 
             await ReplyAsync("**Battlefield 4**", embed: embed.Build());
         }
@@ -257,7 +251,10 @@ namespace Discord.Modules
             }
             var embed = BuildEmbed(user, career.GameStats.BF1);
 
-            embed.WithThumbnailUrl(career.Emblem.Replace("[SIZE]", "256").Replace("[FORMAT]", "png"));
+            //if (career.Emblem != null) {
+            //    embed.WithThumbnailUrl(career.Emblem.Replace("[SIZE]", "256").Replace("[FORMAT]", "png"));
+            //}
+            embed.WithThumbnailUrl(user.Avatar);
 
             await ReplyAsync("**Battlefield 1**", embed: embed.Build());
         }
@@ -269,6 +266,9 @@ namespace Discord.Modules
             }
             var embed = BuildEmbed(user, career.GameStats.BFV);
 
+            //if (career.Emblem != null) {
+            //    embed.WithThumbnailUrl(career.Emblem.Replace("[SIZE]", "256").Replace("[FORMAT]", "png"));
+            //}
             embed.WithThumbnailUrl(user.Avatar);
 
             await ReplyAsync("**Battlefield V**", embed: embed.Build());

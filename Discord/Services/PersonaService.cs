@@ -22,6 +22,11 @@ namespace Discord
         public PersonaService()
         {
             _dataDirectory = Path.Combine(AppContext.BaseDirectory, "data");
+
+            if (!Directory.Exists(_dataDirectory))
+                Directory.CreateDirectory(_dataDirectory);
+            if (!File.Exists(_personaFile))
+                File.Create(_personaFile).Dispose();
         }
         
         public AddStatus AddPersona(ulong userId, string eauserId, string personaId)
@@ -29,11 +34,6 @@ namespace Discord
             SlowStuffSemaphore.WaitAsync();
             var result = AddStatus.Success;
             try {
-                if (!Directory.Exists(_dataDirectory))
-                    Directory.CreateDirectory(_dataDirectory);
-                if (!File.Exists(_personaFile))
-                    File.Create(_personaFile).Dispose();
-
                 // Deserialize current personas
                 var personas = JsonConvert.DeserializeObject<List<Persona>>(File.ReadAllText(_personaFile));
 
