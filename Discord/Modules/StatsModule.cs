@@ -192,7 +192,7 @@ namespace Discord.Modules
 
             return sb.ToString();
         }
-        private EmbedBuilder BuildEmbed(AtomUser user, BasicStats stats) {
+        private EmbedBuilder BuildEmbed(AtomUser user, BasicStats stats, string statsUrl) {
             TimeSpan time = TimeSpan.FromSeconds((ulong)stats.TimePlayed);
 
             var kdr = ((stats.Kills == 0) ? 0 : ((double)stats.Deaths == 0) ? (double)stats.Kills : Math.Round((double)stats.Kills / (double)stats.Deaths, 2));
@@ -202,7 +202,8 @@ namespace Discord.Modules
             var embed = new EmbedBuilder {
                 Author = new EmbedAuthorBuilder() {
                     Name = $"{stats.Rank.Name} - {user.EAID}",
-                    IconUrl = stats.Rank.ImageUrl.Replace("[BB_PREFIX]", prefix)
+                    IconUrl = stats.Rank.ImageUrl.Replace("[BB_PREFIX]", prefix),
+                    Url = statsUrl
                 }
             };
 
@@ -234,12 +235,13 @@ namespace Discord.Modules
 
                 return;
             }
-            var embed = BuildEmbed(user, career.GameStats.BF4);
+            var embed = BuildEmbed(user, career.GameStats.BF4, $"http://battlelog.battlefield.com/bf4/soldier/{user.EAID}/stats/{user.PersonaId}/pc/");
 
             //if (career.Emblem != null) {
             //    embed.WithThumbnailUrl(career.Emblem.Replace("[SIZE]", "256").Replace("[FORMAT]", "png"));
             //}
             embed.WithThumbnailUrl(user.Avatar);
+            embed.WithUrl($"https://bf4stats.com/pc/{user.EAID}");
 
             await ReplyAsync("**Battlefield 4**", embed: embed.Build());
         }
@@ -249,12 +251,13 @@ namespace Discord.Modules
 
                 return;
             }
-            var embed = BuildEmbed(user, career.GameStats.BF1);
+            var embed = BuildEmbed(user, career.GameStats.BF1, $"https://www.battlefield.com/companion/career/{user.PersonaId}/bf1");
 
             //if (career.Emblem != null) {
             //    embed.WithThumbnailUrl(career.Emblem.Replace("[SIZE]", "256").Replace("[FORMAT]", "png"));
             //}
             embed.WithThumbnailUrl(user.Avatar);
+            embed.WithUrl($"https://battlefieldtracker.com/bf1/profile/pc/{user.EAID}");
 
             await ReplyAsync("**Battlefield 1**", embed: embed.Build());
         }
@@ -264,12 +267,13 @@ namespace Discord.Modules
 
                 return;
             }
-            var embed = BuildEmbed(user, career.GameStats.BFV);
+            var embed = BuildEmbed(user, career.GameStats.BFV, $"https://battlefieldtracker.com/bfv/profile/origin/{user.EAID}/overview");
 
             //if (career.Emblem != null) {
             //    embed.WithThumbnailUrl(career.Emblem.Replace("[SIZE]", "256").Replace("[FORMAT]", "png"));
             //}
             embed.WithThumbnailUrl(user.Avatar);
+            embed.WithUrl($"https://battlefieldtracker.com/bfv/profile/origin/{user.EAID}/overview");
 
             await ReplyAsync("**Battlefield V**", embed: embed.Build());
         }
