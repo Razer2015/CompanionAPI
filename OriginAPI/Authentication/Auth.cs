@@ -20,6 +20,9 @@ namespace Origin.Authentication
         private AccessTokenModelCompanion _companionAccess;
         private UserPid _myself;
 
+        private string Email;
+        private string Password;
+
         /// <summary>
         /// Get the Origin authentication token (Login needed)
         /// </summary>
@@ -46,6 +49,9 @@ namespace Origin.Authentication
         }
 
         public void Login(string email, string password) {
+            Email = email;
+            Password = password;
+
             try {
                 // Initializing
                 client.DownloadString("https://accounts.ea.com/connect/auth?response_type=code&client_id=ORIGIN_SPA_ID&display=originXWeb/login&locale=en_US&redirect_uri=https://www.origin.com/views/login.html");
@@ -91,6 +97,33 @@ namespace Origin.Authentication
                 throw new ApplicationException("Incorrect email or password!");
             }
         }
+
+        /// <summary>
+        /// Login again after the BTFL_SESSID has expired
+        /// </summary>
+        public void ReLogin() {
+            client = new GZipWebClient();
+            userClient = new GZipWebClient();
+            Login(Email, Password);
+        }
+
+        // Apparently used in different authentication
+        ///// <summary>
+        ///// Check if authentication is still active
+        ///// </summary>
+        //public bool IsAuthenticated {
+        //    get {
+        //        try {
+        //            var result = client.DownloadString($"https://www.battlefield.com/service/auth.json");
+        //            var deserialized = JsonConvert.DeserializeObject<BattlefieldAuth>(result);
+        //            return deserialized.Authenticated;
+        //        }
+        //        catch (Exception e) {
+        //            Console.WriteLine($"Error: {e.Message}");
+        //            return false;
+        //        }
+        //    }
+        //}
 
         private void LoginVerification(string loginRequestUrl) {
             client.DownloadString(loginRequestUrl + "&_eventId=challenge");

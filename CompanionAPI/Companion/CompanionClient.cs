@@ -1,29 +1,71 @@
 ﻿using CompanionAPI.Models;
 using Newtonsoft.Json;
+using Origin.Authentication;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
+using System.Threading;
 
 namespace CompanionAPI
 {
+    public delegate V CallDelegate<T, U, V>(T input, out U output);
+
     public class CompanionClient
     {
         private string _session;
         private string _clientVersion = "companion-init";
 
-        public bool Login(string code, out ResponseStatus status) {
+        private readonly Auth _originAuth;
+
+        public CompanionClient(Auth originAuth) {
+            _originAuth = originAuth;
+        }
+
+        public bool Login(out ResponseStatus status) {
+            //if (!_originAuth.IsAuthenticated) {
+            //    _originAuth.ReLogin();
+            //}
+
             var method = "Companion.loginFromAuthCode";
-            if (PostRequest<LoginViewModel>(method, new RequestParams { Code = code, RedirectUri = "nucleus:rest" }, out var result)) {
-                status = result.ResponseStatus;
-                _session = result.Result.Id;
-                _clientVersion = "companion-9014390";
-                return true;
+            var retryCount = 2;
+            Response<LoginViewModel> response = null;
+            for (int i = 0; i <= retryCount; i++) {
+                if (i > 0) {
+                    _originAuth.ReLogin();
+                }
+                if (PostRequest<LoginViewModel>(method, new RequestParams { Code = _originAuth.CompanionToken, RedirectUri = "nucleus:rest" }, out response)) {
+                    status = response.ResponseStatus;
+                    _session = response.Result.Id;
+                    _clientVersion = "companion-9014390";
+                    return true;
+                }
+                if (i > 0) {
+                    // Wait 2 seconds before trying again
+                    Thread.Sleep(2 * 1000);
+                }
             }
-            else {
-                status = result.ResponseStatus;
-                return false;
+            status = response.ResponseStatus;
+            return false;
+        }
+
+        private void ExcecuteMethod<T>(CallDelegate<RequestParams, OutputModel<T>, bool> method, RequestParams @params, out OutputModel<T> outputModel) {
+            outputModel = null;
+
+            for (int i = 0; i < 2; i++) {
+                if (method(@params, out outputModel)) {
+                    break;
+                }
+                else {
+                    if (outputModel.Response.Status == Status.InvalidSession) {
+                        // Login and retrieve session token
+                        if (!Login(out var response)) {
+                            throw new Exception($"Invalid session and couldn't refresh. {response.Message}");
+                        }
+                    }
+                    else {
+                        throw new Exception("Unknown error.");
+                    }
+                }
             }
         }
 
@@ -33,28 +75,9 @@ namespace CompanionAPI
         /// <param name="token"></param>
         /// <param name="personaId"></param>
         /// <returns></returns>
-        public StatsViewModel GetPersonaInfo(string token, string personaId) {
-            var info = new CareerViewModel();
-            // Get career
-            for (int i = 0; i < 2; i++) {
-                if (GetCareer(personaId, out var career, out var responseStatus)) {
-                    info = career;
-                    break;
-                }
-                else {
-                    if (responseStatus.Status == Status.InvalidSession) {
-                        // Login and retrieve session token
-                        if (!Login(token, out responseStatus)) {
-                            throw new Exception("Error: Invalid session and couldn't refresh.");
-                        }
-                    }
-                    else {
-                        throw new Exception("Error: Unknown error.");
-                    }
-                }
-            }
-
-            return info;
+        public StatsViewModel GetPersonaInfo(string personaId) {
+            ExcecuteMethod<CareerViewModel>(GetCareer, new RequestParams { PersonaId = personaId }, out var output);
+            return output.Model;
         }
 
         /// <summary>
@@ -65,107 +88,98 @@ namespace CompanionAPI
         /// <param name="game"></param>
         /// <param name="platform"></param>
         /// <returns></returns>
-        public StatsViewModel GetPersonaInfo(string token, string personaId, string game, string platform) {
-            var info = new DetailedStatsViewModel();
+        public StatsViewModel GetPersonaInfo(string personaId, string game, string platform) {
             // Get detailed stats
-            for (int i = 0; i < 2; i++) {
-                if (GetDetailedStats(game, personaId, out var stats, out var responseStatus)) {
-                    info = stats;
-                    break;
-                }
-                else {
-                    if (responseStatus.Status == Status.InvalidSession) {
-                        // Login and retrieve session token
-                        if (!Login(token, out responseStatus)) {
-                            throw new Exception("Error: Invalid session and couldn't refresh.");
-                        }
-                    }
-                    else {
-                        throw new Exception("Error: Unknown error.");
-                    }
-                }
-            }
+            ExcecuteMethod<DetailedStatsViewModel>(GetDetailedStats, new RequestParams { Game = game, PersonaId = personaId }, out var detailedStatsOutput);
 
             // Get emblem
-            for (int i = 0; i < 2; i++) {
-                if (GetEquippedEmblem(personaId, platform, out var emblemUrl, out var responseStatus)) {
-                    info.EmblemUrl = emblemUrl;
-                    break;
-                }
-                else {
-                    if (responseStatus.Status == Status.InvalidSession) {
-                        // Login and retrieve session token
-                        if (!Login(token, out responseStatus)) {
-                            throw new Exception("Error: Invalid session and couldn't refresh.");
-                        }
-                    }
-                    else {
-                        throw new Exception("Error: Unknown error.");
-                    }
-                }
-            }
+            ExcecuteMethod<string>(GetEquippedEmblem, new RequestParams { PersonaId = personaId, Platform = platform }, out var emblemOutput);
+            detailedStatsOutput.Model.EmblemUrl = emblemOutput.Model;
 
-            return info;
+            return detailedStatsOutput.Model;
+        }
+
+        #region Detailed Stats
+        /// <summary>
+        /// Get detailed stats of a game for person
+        /// </summary>
+        /// <param name="game">BF4 = bf4, BF1 = tunguska, BFV = casablanca</param>
+        /// <param name="personaId">Unique Id used to identify a player</param>
+        public bool GetDetailedStats(string game, string personaId, out OutputModel<DetailedStatsViewModel> outputModel) {
+            return GetDetailedStats(new RequestParams { Game = game, PersonaId = personaId }, out outputModel);
         }
 
         /// <summary>
         /// Get detailed stats of a game for person
         /// </summary>
-        /// <param name="game">BF4 = bf4, BF1 = tunguska, BFV = casablanca</param>
-        /// <param name="personaId"></param>
-        public bool GetDetailedStats(string game, string personaId, out DetailedStatsViewModel response, out ResponseStatus status) {
+        public bool GetDetailedStats(RequestParams requestParams, out OutputModel<DetailedStatsViewModel> outputModel) {
+            outputModel = new OutputModel<DetailedStatsViewModel>();
+
             var method = "Stats.detailedStatsByPersonaId";
-            if (PostRequest<DetailedStatsViewModel>(method, new RequestParams { Game = game, PersonaId = personaId }, out var result)) {
-                status = result.ResponseStatus;
-                response = result.Result;
+            if (PostRequest<DetailedStatsViewModel>(method, requestParams, out var result)) {
+                outputModel.Response = result.ResponseStatus;
+                outputModel.Model = result.Result;
                 return true;
             }
             else {
-                status = result.ResponseStatus;
-                response = null;
+                outputModel.Response = result.ResponseStatus;
                 return false;
             }
+        } 
+        #endregion
+
+        #region Emblem
+        /// <summary>
+        /// Get the equipped emblem url of the persona
+        /// </summary>
+        public bool GetEquippedEmblem(string personaId, string platform, out OutputModel<string> outputModel) {
+            return GetEquippedEmblem(new RequestParams { PersonaId = personaId, Platform = platform }, out outputModel);
         }
 
         /// <summary>
         /// Get the equipped emblem url of the persona
         /// </summary>
-        /// <param name="personaId"></param>
-        /// <param name="platform"></param>
-        /// <param name="emblemUrl"></param>
-        /// <param name="status"></param>
-        /// <returns></returns>
-        public bool GetEquippedEmblem(string personaId, string platform, out string emblemUrl, out ResponseStatus status) {
+        public bool GetEquippedEmblem(RequestParams requestParams, out OutputModel<string> outputModel) {
+            outputModel = new OutputModel<string>();
+
             var method = "Emblems.getEquippedEmblem";
-            platform = (string.IsNullOrEmpty(platform) ? "pc" : platform);
-            if (PostRequest<string>(method, new RequestParams { PersonaId = personaId, Platform = platform }, out var result)) {
-                status = result.ResponseStatus;
-                emblemUrl = result.Result;
+            requestParams.Platform = (string.IsNullOrEmpty(requestParams.Platform) ? "pc" : requestParams.Platform);
+            if (PostRequest<string>(method, requestParams, out var result)) {
+                outputModel.Response = result.ResponseStatus;
+                outputModel.Model = result.Result;
                 return true;
             }
             else {
-                status = result.ResponseStatus;
-                emblemUrl = null;
+                outputModel.Response = result.ResponseStatus;
                 return false;
             }
+        } 
+        #endregion
+
+        #region Career
+        public bool GetCareer(string personaId, out OutputModel<CareerViewModel> outputModel) {
+            return GetCareer(new RequestParams { PersonaId = personaId }, out outputModel);
         }
 
-        public bool GetCareer(string personaId, out CareerViewModel career, out ResponseStatus status) {
+        public bool GetCareer(RequestParams requestParams, out OutputModel<CareerViewModel> outputModel) {
+            outputModel = new OutputModel<CareerViewModel>();
+
             var method = "Stats.getCareerForOwnedGamesByPersonaId";
-            if (PostRequest<CareerViewModel>(method, new RequestParams { PersonaId = personaId }, out var result)) {
-                status = result.ResponseStatus;
-                career = result.Result;
+            if (PostRequest<CareerViewModel>(method, requestParams, out var result)) {
+                outputModel.Response = result.ResponseStatus;
+                outputModel.Model = result.Result;
                 return true;
             }
             else {
-                status = result.ResponseStatus;
-                career = null;
+                outputModel.Response = result.ResponseStatus;
                 return false;
             }
         }
+        #endregion
 
+        #region Request
         private string GenerateRequestData(string method, RequestParams data) {
-            return JsonConvert.SerializeObject(new Request<RequestParams>(method, data), 
+            return JsonConvert.SerializeObject(new Request<RequestParams>(method, data),
                 Formatting.None,
                 new JsonSerializerSettings {
                     NullValueHandling = NullValueHandling.Ignore
@@ -209,6 +223,7 @@ namespace CompanionAPI
 
                 return false;
             }
-        }
+        } 
+        #endregion
     }
 }

@@ -52,6 +52,7 @@
     <Compile Include="Companion\CompanionClient.cs" />
     <Compile Include="Companion\Models\CareerViewModel.cs" />
     <Compile Include="Companion\Models\LoginViewModel.cs" />
+    <Compile Include="Companion\Models\OutputModel.cs" />
     <Compile Include="Companion\Models\StatsViewModel.cs" />
     <Compile Include="Companion\Models\Response.cs" />
     <Compile Include="Companion\Models\Request.cs" />
@@ -63,6 +64,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\OriginAPI\OriginAPI.csproj">
+      <Project>{33C7CBA7-4B4F-47FB-95FD-A60BDF46B7E3}</Project>
+      <Name>OriginAPI</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

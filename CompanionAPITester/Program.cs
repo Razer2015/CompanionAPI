@@ -23,23 +23,23 @@ namespace CompanionAPITester
                 // Search persona
                 if (auth.SearchPersonaId(settings.PersonaName, out var user, out var status)) {
                     // Login and retrieve session token
-                    var companion = new CompanionClient();
-                    if (companion.Login(auth.CompanionToken, out var responseStatus)) {
+                    var companion = new CompanionClient(auth);
+                    if (companion.Login(out var responseStatus)) {
                         // Get detailed stats
-                        if (companion.GetDetailedStats(settings.Game, user.PersonaId, out var stats, out responseStatus)) {
+                        if (companion.GetDetailedStats(settings.Game, user.PersonaId, out var output)) {
                             Console.WriteLine($@"Player: {user.EAID} ({user.PersonaId})
-StatsType: {stats.DetailedStatType}
-TimePlayed: {stats.BasicStats.TimePlayed}
-Wins: {stats.BasicStats.Wins}
-Losses: {stats.BasicStats.Losses}
-Kills: {stats.BasicStats.Kills}
-Deaths: {stats.BasicStats.Deaths}
-Kpm: {stats.BasicStats.KPM}
-Spm: {stats.BasicStats.SPM}
-Skill: {stats.BasicStats.Skill}");
+StatsType: {output.Model.DetailedStatType}
+TimePlayed: {output.Model.BasicStats.TimePlayed}
+Wins: {output.Model.BasicStats.Wins}
+Losses: {output.Model.BasicStats.Losses}
+Kills: {output.Model.BasicStats.Kills}
+Deaths: {output.Model.BasicStats.Deaths}
+Kpm: {output.Model.BasicStats.KPM}
+Spm: {output.Model.BasicStats.SPM}
+Skill: {output.Model.BasicStats.Skill}");
                         }
                         else {
-                            Console.WriteLine($"{responseStatus.Status}: Stats retrieval failed - {responseStatus.Message}");
+                            Console.WriteLine($"{output.Response.Status}: Stats retrieval failed - {output.Response.Message}");
                         }
                     }
                     else {

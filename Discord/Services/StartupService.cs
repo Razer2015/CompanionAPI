@@ -1,4 +1,5 @@
-﻿using Discord.Commands;
+﻿using CompanionAPI;
+using Discord.Commands;
 using Discord.Modules;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
@@ -15,18 +16,21 @@ namespace Discord
         private readonly CommandService _commands;
         private readonly IConfigurationRoot _config;
         private readonly Auth _auth;
+        private readonly CompanionClient _companionClient;
 
         // DiscordSocketClient, CommandService, and IConfigurationRoot are injected automatically from the IServiceProvider
         public StartupService(
             DiscordSocketClient discord,
             CommandService commands,
             IConfigurationRoot config,
-            Auth auth)
+            Auth auth,
+            CompanionClient companionClient)
         {
             _config = config;
             _discord = discord;
             _commands = commands;
             _auth = auth;
+            _companionClient = companionClient;
         }
 
         public async Task StartAsync()

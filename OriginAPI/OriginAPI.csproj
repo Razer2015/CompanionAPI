@@ -52,6 +52,7 @@
     <Compile Include="Authentication\Prompt.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Models\Avatar.cs" />
+    <Compile Include="Models\BattlefieldAuth.cs" />
     <Compile Include="Models\Personas.cs" />
     <Compile Include="Models\UserPid.cs" />
     <Compile Include="Models\Users.cs" />

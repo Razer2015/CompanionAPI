@@ -123,7 +123,7 @@ namespace Discord.Modules
             // Search persona
             if (_auth.SearchPersonaId(userName, out var user, out var status)) {
                 try {
-                    var personaInfo = (CareerViewModel)_companionClient.GetPersonaInfo(_auth.CompanionToken, user.PersonaId);
+                    var personaInfo = (CareerViewModel)_companionClient.GetPersonaInfo(user.PersonaId);
                     switch (game) {
                         case Games.BF4:
                             await PrintBF4Stats(user, personaInfo);
@@ -152,7 +152,7 @@ namespace Discord.Modules
                 // Search persona
                 if (_auth.SearchPersonaId(persona.EAUserId, out var user)) {
                     try {
-                        var personaInfo = (CareerViewModel)_companionClient.GetPersonaInfo(_auth.CompanionToken, user.PersonaId);
+                        var personaInfo = (CareerViewModel)_companionClient.GetPersonaInfo(user.PersonaId);
                         switch (game) {
                             case Games.BF4:
                                 await PrintBF4Stats(user, personaInfo);
