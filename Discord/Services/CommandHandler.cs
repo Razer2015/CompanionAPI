@@ -41,7 +41,7 @@ namespace Discord
             {
                 var result = await _commands.ExecuteAsync(context, argPos, _provider);     // Execute the command
 
-                if (!result.IsSuccess)     // If not successful, reply with the error.
+                if (!result.IsSuccess && result?.Error != CommandError.UnknownCommand)     // If not successful, reply with the error.
                     await context.Channel.SendMessageAsync(result.ToString());
             }
         }
