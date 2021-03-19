@@ -48,6 +48,8 @@ namespace CompanionAPI
             return false;
         }
 
+        public string GetEmail { get { return _originAuth.GetEmail; } }
+
         private void ExcecuteMethod<T>(CallDelegate<RequestParams, OutputModel<T>, bool> method, RequestParams @params, out OutputModel<T> outputModel) {
             outputModel = null;
 
@@ -66,6 +68,57 @@ namespace CompanionAPI
                         throw new Exception("Unknown error.");
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        ///     Reserve a slot from the server
+        /// </summary>
+        /// <param name="game">e.g. bf4</param>
+        /// <param name="gameId">e.g. 18014398527195660</param>
+        /// <param name="role">e.g. soldier or spectator</param>
+        /// <returns></returns>
+        public bool ReserveSlot(string game, string gameId, string role, out OutputModel<GameJoinViewModel> outputModel) {
+            return ReserveSlot(new RequestParams { Game = game, GameId = gameId, Settings = new Settings { Role = role } }, out outputModel);
+        }
+
+        public bool ReserveSlot(RequestParams requestParams, out OutputModel<GameJoinViewModel> outputModel) {
+            outputModel = new OutputModel<GameJoinViewModel>();
+
+            var method = "Game.reserveSlot";
+            if (PostRequest<GameJoinViewModel>(method, requestParams, out var result)) {
+                outputModel.Response = result.ResponseStatus;
+                outputModel.Model = result.Result;
+                return true;
+            }
+            else {
+                outputModel.Response = result.ResponseStatus;
+                return false;
+            }
+        }
+
+        /// <summary>
+        ///     Leave the game server
+        /// </summary>
+        /// <param name="game">e.g. bf4</param>
+        /// <param name="gameId">e.g. 18014398527195660</param>
+        /// <returns></returns>
+        public bool LeaveGame(string game, string gameId, out OutputModel<string> outputModel) {
+            return LeaveGame(new RequestParams { Game = game, GameId = gameId }, out outputModel);
+        }
+
+        public bool LeaveGame(RequestParams requestParams, out OutputModel<string> outputModel) {
+            outputModel = new OutputModel<string>();
+
+            var method = "Game.leaveGame";
+            if (PostRequest<string>(method, requestParams, out var result)) {
+                outputModel.Response = result.ResponseStatus;
+                outputModel.Model = result.Result;
+                return true;
+            }
+            else {
+                outputModel.Response = result.ResponseStatus;
+                return false;
             }
         }
 

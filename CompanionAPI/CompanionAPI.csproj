@@ -54,6 +54,7 @@
     <Compile Include="Companion\Models\LoginViewModel.cs" />
     <Compile Include="Companion\Models\OutputModel.cs" />
     <Compile Include="Companion\Models\StatsViewModel.cs" />
+    <Compile Include="Companion\Models\GameJoinViewModel.cs" />
     <Compile Include="Companion\Models\Response.cs" />
     <Compile Include="Companion\Models\Request.cs" />
     <Compile Include="Companion\Models\DetailedStatsViewModel.cs" />

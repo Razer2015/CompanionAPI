@@ -32,6 +32,10 @@ namespace CompanionAPI.Models
     {
         [JsonProperty("game")]
         public string Game { get; set; }
+        [JsonProperty("gameId")]
+        public string GameId { get; set; }
+        [JsonProperty("settings")]
+        public Settings Settings { get; set; }
         [JsonProperty("personaId")]
         public string PersonaId { get; set; }
         [JsonProperty("platform")]
@@ -40,5 +44,11 @@ namespace CompanionAPI.Models
         public string Code { get; set; }
         [JsonProperty("redirectUri")]
         public string RedirectUri { get; set; }
+    }
+
+    public class Settings
+    {
+        [JsonProperty("role")]
+        public string Role { get; set; }
     }
 }

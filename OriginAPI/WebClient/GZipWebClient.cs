@@ -42,8 +42,14 @@ namespace WebClient
                 if (e.Message.Contains("302"))
                     response = (HttpWebResponse)e.Response;
             }
-            this.ResponseCookies = response.Cookies;
-            return response;
+            try {
+                this.ResponseCookies = response.Cookies;
+                return response;
+            }
+            catch (Exception ex) {
+                Console.WriteLine(ex.Message);
+                return response;
+            }
         }
     }
 }
